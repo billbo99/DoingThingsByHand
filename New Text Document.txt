@@ -1,1 +1,1 @@
-dying_trigger_effect = {type = 'nested-result', action = small_meltdown}
+https://www.wolframalpha.com/input/?i=solve+y+%3D+100*%28x%5E2%29+-+100x+for+x

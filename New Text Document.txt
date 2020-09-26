@@ -1,0 +1,1 @@
+dying_trigger_effect = {type = 'nested-result', action = small_meltdown}

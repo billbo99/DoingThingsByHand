@@ -1,0 +1,6 @@
+---------------------------------------------------------------------------------------------------
+Version: 0.0.1
+Date: 25. 09. 2020
+  Features:
+    - First cut at "Things Go Boom!",  something JD-Plays wants in an upcoming scenario
+    - Idea is if you die and have a fusion reactor in your armor's grid or vehicle's grid you will trigger a meltdown event.

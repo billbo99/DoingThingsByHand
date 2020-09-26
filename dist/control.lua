@@ -25,7 +25,7 @@ local function OnPlayerMinedEntity(e)
     if current_level ~= playerMining.level then
         playerMining.level = current_level
         local player = game.get_player(e.player_index)
-        player.character_mining_speed_modifier = (playerCrafting.level - 1) * 0.1
+        player.character_mining_speed_modifier = (playerMining.level - 1) * 0.1
         player.print("Mining speed bonus has now been increased to .. " .. tostring(player.character_mining_speed_modifier * 100) .. "%")
     end
 end

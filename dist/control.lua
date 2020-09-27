@@ -1,6 +1,7 @@
 local function OnInit(e)
     global.crafting = {}
     global.mining = {}
+    global.print_colour = {r = 255, g = 255, b = 0}
 end
 
 local function OnLoad(e)
@@ -10,6 +11,7 @@ local function OnConfigurationChanged(e)
     if e.mod_changes and e.mod_changes["DoingThingsByHand"] then
         global.crafting = global.crafting or {}
         global.mining = global.mining or {}
+        global.print_colour = {r = 255, g = 255, b = 0}
     end
 end
 
@@ -26,7 +28,7 @@ local function OnPlayerMinedEntity(e)
         playerMining.level = current_level
         local player = game.get_player(e.player_index)
         player.character_mining_speed_modifier = (playerMining.level - 1) * 0.1
-        player.print("Mining speed bonus has now been increased to .. " .. tostring(player.character_mining_speed_modifier * 100) .. "%")
+        player.print("Mining speed bonus has now been increased to .. " .. tostring(player.character_mining_speed_modifier * 100) .. "%", global.print_colour)
     end
 end
 
@@ -43,9 +45,23 @@ local function OnPlayerCraftedItem(e)
         playerCrafting.level = current_level
         local player = game.get_player(e.player_index)
         player.character_crafting_speed_modifier = (playerCrafting.level - 1) * 0.1
-        player.print("Crafting speed bonus has now been increased to .. " .. tostring(player.character_crafting_speed_modifier * 100) .. "%")
+        player.print("Crafting speed bonus has now been increased to .. " .. tostring(player.character_crafting_speed_modifier * 100) .. "%", global.print_colour)
     end
 end
+
+commands.add_command(
+    "HowSpeedy",
+    "HowSpeedy [player]",
+    function(event)
+        local calling_player = game.players[event.player_index]
+        local player = game.players[event.player_index]
+        if event.parameter and game.get_player(event.parameter) then
+            player = game.get_player(event.parameter)
+        end
+        calling_player.print("Mining .. " .. tostring(player.character_mining_speed_modifier * 100) .. "%", global.print_colour)
+        calling_player.print("Crafting .. " .. tostring(player.character_crafting_speed_modifier * 100) .. "%", global.print_colour)
+    end
+)
 
 script.on_init(OnInit)
 script.on_load(OnLoad)

@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.0.6
+Date: 27. 09. 2020
+  Changes:
+    - Spotted via the display message bonuses were being lost,  added something to recheck the stats periodically
+---------------------------------------------------------------------------------------------------
 Version: 0.0.5
 Date: 27. 09. 2020
   Changes:

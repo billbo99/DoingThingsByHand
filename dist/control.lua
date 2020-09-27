@@ -1,5 +1,9 @@
-local function CurrentLevel(param)
-    return (math.sqrt(param + 25) + 5) / 10
+local function CurrentLevel(xp)
+    return (math.sqrt(xp + 25) + 5) / 10
+end
+
+local function GetPlayerStats(player_index, stat_name)
+    return global[stat_name][player_index] or {count = 0, level = 1}
 end
 
 local function OnInit(e)
@@ -20,40 +24,51 @@ local function OnConfigurationChanged(e)
 end
 
 local function OnPlayerMinedEntity(e)
-    global.mining[e.player_index] = global.mining[e.player_index] or {count = 0, level = 1}
-    local playerMining = global.mining[e.player_index]
+    -- Add XP for mining
+    local playerMining = GetPlayerStats(e.player_index, "mining")
     playerMining.count = playerMining.count + 1
 
+    -- Compute new level
     local current_level = math.floor(CurrentLevel(playerMining.count))
 
+    -- Level up message
     if current_level ~= playerMining.level then
         playerMining.level = current_level
         local player = game.get_player(e.player_index)
         player.character_mining_speed_modifier = (playerMining.level - 1) * 0.1
         player.print("Mining speed bonus has now been increased to .. " .. tostring(player.character_mining_speed_modifier * 100) .. "%", global.print_colour)
     end
+
+    -- Finally set if it was the first mining
+    global.mining[e.player_index] = playerMining
 end
 
 local function OnPlayerCraftedItem(e)
-    global.crafting[e.player_index] = global.crafting[e.player_index] or {count = 0, level = 1}
-    local playerCrafting = global.crafting[e.player_index]
+    -- Add XP for crafing
+    local playerCrafting = GetPlayerStats(e.player_index, "crafting")
     playerCrafting.count = playerCrafting.count + 1
 
+    -- Compute new level
     local current_level = math.floor(CurrentLevel(playerCrafting.count))
 
+    -- Level up message
     if current_level ~= playerCrafting.level then
         playerCrafting.level = current_level
         local player = game.get_player(e.player_index)
         player.character_crafting_speed_modifier = (playerCrafting.level - 1) * 0.1
         player.print("Crafting speed bonus has now been increased to .. " .. tostring(player.character_crafting_speed_modifier * 100) .. "%", global.print_colour)
     end
+
+    -- Finally set if it was the first mining
+    global.crafting[e.player_index] = playerCrafting
 end
 
 local function ReApplyBonuses(e)
-    for ixd, _ in pairs(game.connected_players) do
-        local playerCrafting = global.crafting[ixd]
-        local playerMining = global.mining[ixd]
-        local player = game.get_player(ixd)
+    for player_index, _ in pairs(game.connected_players) do
+        local player = game.get_player(player_index)
+        local playerCrafting = GetPlayerStats(player_index, "crafting")
+        local playerMining = GetPlayerStats(player_index, "mining")
+
         if player.controller_type == defines.controllers.character then
             player.character_crafting_speed_modifier = (math.floor(CurrentLevel(playerCrafting.count)) - 1) * 0.1
             player.character_mining_speed_modifier = (math.floor(CurrentLevel(playerMining.count)) - 1) * 0.1
@@ -71,8 +86,8 @@ commands.add_command(
             player = game.get_player(event.parameter)
         end
 
-        local playerCrafting = global.crafting[player.index]
-        local playerMining = global.mining[player.index]
+        local playerCrafting = GetPlayerStats(player_index, "crafting")
+        local playerMining = GetPlayerStats(player_index, "mining")
 
         calling_player.print(string.format("Mining Level .. %2.2f", CurrentLevel(playerMining.count)), global.print_colour)
         calling_player.print("Mining Bonus .. " .. tostring(player.character_mining_speed_modifier * 100) .. "%", global.print_colour)

@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.1.0
+Date: 28. 09. 2020
+  Changes:
+    - Altered how the interal data is stored with the mod.   "on_configuration_changed" script should migrate the old data to the new format.
+---------------------------------------------------------------------------------------------------
 Version: 0.0.6
 Date: 27. 09. 2020
   Changes:

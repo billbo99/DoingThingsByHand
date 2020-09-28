@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.1.1
+Date: 28. 09. 2020
+  Bugfixes:
+    - DoingThingsByHand/control.lua:78: attempt to index field '?' (a nil value)
+    - DoingThingsByHand/control.lua:94: attempt to index field '?' (a nil value)
+---------------------------------------------------------------------------------------------------
 Version: 0.1.0
 Date: 28. 09. 2020
   Changes:

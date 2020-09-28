@@ -75,7 +75,9 @@ end
 
 local function OnPlayerMinedEntity(e)
     local player = game.get_player(e.player_index)
-    global.players[player.name].mining = global.players[player.name].mining or {count = 0, level = 1}
+    if global.players[player.name] == nil or global.players[player.name].mining == nil then
+        FixPlayerRecord(player)
+    end
 
     local playerMining = global.players[player.name].mining
     playerMining.count = playerMining.count + 1
@@ -91,7 +93,9 @@ end
 
 local function OnPlayerCraftedItem(e)
     local player = game.get_player(e.player_index)
-    global.players[player.name].crafting = global.players[player.name].crafting or {count = 0, level = 1}
+    if global.players[player.name] == nil or global.players[player.name].crafting == nil then
+        FixPlayerRecord(player)
+    end
 
     local playerCrafting = global.players[player.name].crafting
     playerCrafting.count = playerCrafting.count + 1

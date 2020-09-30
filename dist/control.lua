@@ -32,6 +32,7 @@ local function ReApplyBonuses(e)
 end
 
 local function OnInit(e)
+    global.cache = global.cache or {}
     global.players = global.players or {}
     global.print_colour = {r = 255, g = 255, b = 0}
 end
@@ -41,6 +42,7 @@ end
 
 local function OnConfigurationChanged(e)
     if e.mod_changes and e.mod_changes["DoingThingsByHand"] then
+        OnInit(e)
         -- migrate to new dict structure
         if global.players == nil then
             global.players = {}
@@ -79,8 +81,16 @@ local function OnPlayerMinedEntity(e)
         FixPlayerRecord(player)
     end
 
+    local points = 1
+    if global.cache[e.entity.name] then
+        points = global.cache[e.entity.name]
+    elseif e.entity and e.entity.prototype and e.entity.prototype.mineable_properties and e.entity.prototype.mineable_properties.mining_time then
+        points = e.entity.prototype.mineable_properties.mining_time
+        global.cache[e.entity.name] = points
+    end
+
     local playerMining = global.players[player.name].mining
-    playerMining.count = playerMining.count + 1
+    playerMining.count = playerMining.count + points
 
     local current_level = math.floor(CurrentLevel(playerMining.count))
 
@@ -97,8 +107,16 @@ local function OnPlayerCraftedItem(e)
         FixPlayerRecord(player)
     end
 
+    local points = 1
+    if global.cache[e.recipe.name] then
+        points = global.cache[e.recipe.name]
+    elseif e.recipe and e.recipe.energy then
+        points = e.recipe.energy
+        global.cache[e.recipe.name] = points
+    end
+
     local playerCrafting = global.players[player.name].crafting
-    playerCrafting.count = playerCrafting.count + 1
+    playerCrafting.count = playerCrafting.count + points
 
     local current_level = math.floor(CurrentLevel(playerCrafting.count))
 

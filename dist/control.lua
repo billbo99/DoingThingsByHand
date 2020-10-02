@@ -77,53 +77,58 @@ end
 
 local function OnPlayerMinedEntity(e)
     local player = game.get_player(e.player_index)
-    if global.players[player.name] == nil or global.players[player.name].mining == nil then
-        FixPlayerRecord(player)
-    end
 
-    local points = 1
-    if global.cache[e.entity.name] then
-        points = global.cache[e.entity.name]
-    elseif e.entity and e.entity.prototype and e.entity.prototype.mineable_properties and e.entity.prototype.mineable_properties.mining_time then
-        points = e.entity.prototype.mineable_properties.mining_time
-        global.cache[e.entity.name] = points
-    end
+    if player.controller_type == defines.controllers.character then
+        if global.players[player.name] == nil or global.players[player.name].mining == nil then
+            FixPlayerRecord(player)
+        end
 
-    local playerMining = global.players[player.name].mining
-    playerMining.count = playerMining.count + points
+        local points = 1
+        if global.cache[e.entity.name] then
+            points = global.cache[e.entity.name]
+        elseif e.entity and e.entity.prototype and e.entity.prototype.mineable_properties and e.entity.prototype.mineable_properties.mining_time then
+            points = e.entity.prototype.mineable_properties.mining_time
+            global.cache[e.entity.name] = points
+        end
 
-    local current_level = math.floor(CurrentLevel(playerMining.count))
+        local playerMining = global.players[player.name].mining
+        playerMining.count = playerMining.count + points
 
-    if current_level ~= playerMining.level then
-        playerMining.level = current_level
-        player.character_mining_speed_modifier = (playerMining.level - 1) * 0.1
-        player.print("Mining speed bonus has now been increased to .. " .. tostring(player.character_mining_speed_modifier * 100) .. "%", global.print_colour)
+        local current_level = math.floor(CurrentLevel(playerMining.count))
+
+        if current_level ~= playerMining.level then
+            playerMining.level = current_level
+            player.character_mining_speed_modifier = (playerMining.level - 1) * 0.1
+            player.print("Mining speed bonus has now been increased to .. " .. tostring(player.character_mining_speed_modifier * 100) .. "%", global.print_colour)
+        end
     end
 end
 
 local function OnPlayerCraftedItem(e)
     local player = game.get_player(e.player_index)
-    if global.players[player.name] == nil or global.players[player.name].crafting == nil then
-        FixPlayerRecord(player)
-    end
+    if player.controller_type == defines.controllers.character then
+        if global.players[player.name] == nil or global.players[player.name].crafting == nil then
+            FixPlayerRecord(player)
+        end
 
-    local points = 1
-    if global.cache[e.recipe.name] then
-        points = global.cache[e.recipe.name]
-    elseif e.recipe and e.recipe.energy then
-        points = e.recipe.energy
-        global.cache[e.recipe.name] = points
-    end
+        local points = 1
+        if global.cache[e.recipe.name] then
+            points = global.cache[e.recipe.name]
+        elseif e.recipe and e.recipe.energy then
+            points = e.recipe.energy
+            global.cache[e.recipe.name] = points
+        end
 
-    local playerCrafting = global.players[player.name].crafting
-    playerCrafting.count = playerCrafting.count + points
+        local playerCrafting = global.players[player.name].crafting
+        playerCrafting.count = playerCrafting.count + points
 
-    local current_level = math.floor(CurrentLevel(playerCrafting.count))
+        local current_level = math.floor(CurrentLevel(playerCrafting.count))
 
-    if current_level ~= playerCrafting.level then
-        playerCrafting.level = current_level
-        player.character_crafting_speed_modifier = (playerCrafting.level - 1) * 0.1
-        player.print("Crafting speed bonus has now been increased to .. " .. tostring(player.character_crafting_speed_modifier * 100) .. "%", global.print_colour)
+        if current_level ~= playerCrafting.level then
+            playerCrafting.level = current_level
+            player.character_crafting_speed_modifier = (playerCrafting.level - 1) * 0.1
+            player.print("Crafting speed bonus has now been increased to .. " .. tostring(player.character_crafting_speed_modifier * 100) .. "%", global.print_colour)
+        end
     end
 end
 

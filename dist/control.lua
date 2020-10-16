@@ -158,7 +158,6 @@ local function TrackDistanceTravelledByPlayer(player)
 
             local playerRunning = global.players[player.name].running
             playerRunning.count = playerRunning.count + distance_walked
-            player.print(playerRunning.count)
 
             local current_level = math.floor(CurrentLevel(playerRunning.count))
 

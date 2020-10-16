@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.0
+Date: 02. 10. 2020
+  Features:
+    - Added a running modifier after tracking how far a player has walked they get a point per chunk walked.
+    - Added mod settings to allow the points awarded to be adjustable
+---------------------------------------------------------------------------------------------------
 Version: 0.2.1
 Date: 02. 10. 2020
   Bugfixes:

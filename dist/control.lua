@@ -8,6 +8,7 @@ local function ReApplyBonus(player)
     if player.controller_type == defines.controllers.character then
         player.character_crafting_speed_modifier = (math.floor(CurrentLevel(global.players[player.name].crafting.count)) - 1) * 0.1
         player.character_mining_speed_modifier = (math.floor(CurrentLevel(global.players[player.name].mining.count)) - 1) * 0.1
+        player.character_running_speed_modifier = (math.floor(CurrentLevel(global.players[player.name].running.count)) - 1) * 0.1
     end
 end
 
@@ -20,6 +21,9 @@ local function FixPlayerRecord(player)
     end
     if global.players[player.name].mining == nil then
         global.players[player.name].mining = {count = 0, level = 1}
+    end
+    if global.players[player.name].running == nil then
+        global.players[player.name].running = {count = 0, level = 1, last_position = {x = 0, y = 0}}
     end
     ReApplyBonus(player)
 end
@@ -43,6 +47,10 @@ end
 local function OnConfigurationChanged(e)
     if e.mod_changes and e.mod_changes["DoingThingsByHand"] then
         OnInit(e)
+
+        -- flush the cache if the mod has changed
+        global.cache = {}
+
         -- migrate to new dict structure
         if global.players == nil then
             global.players = {}
@@ -87,7 +95,7 @@ local function OnPlayerMinedEntity(e)
         if global.cache[e.entity.name] then
             points = global.cache[e.entity.name]
         elseif e.entity and e.entity.prototype and e.entity.prototype.mineable_properties and e.entity.prototype.mineable_properties.mining_time then
-            points = e.entity.prototype.mineable_properties.mining_time
+            points = e.entity.prototype.mineable_properties.mining_time / settings.global["DoingThingsByHand-mining"].value
             global.cache[e.entity.name] = points
         end
 
@@ -115,7 +123,7 @@ local function OnPlayerCraftedItem(e)
         if global.cache[e.recipe.name] then
             points = global.cache[e.recipe.name]
         elseif e.recipe and e.recipe.energy then
-            points = e.recipe.energy
+            points = e.recipe.energy / settings.global["DoingThingsByHand-crafting"].value
             global.cache[e.recipe.name] = points
         end
 
@@ -129,6 +137,50 @@ local function OnPlayerCraftedItem(e)
             player.character_crafting_speed_modifier = (playerCrafting.level - 1) * 0.1
             player.print("Crafting speed bonus has now been increased to .. " .. tostring(player.character_crafting_speed_modifier * 100) .. "%", global.print_colour)
         end
+    end
+end
+
+local function TrackDistanceTravelledByPlayer(player)
+    if player.controller_type == defines.controllers.character then
+        if (player.afk_time < 30 or player.walking_state.walking) and player.vehicle == nil then
+            if global.players[player.name] == nil or global.players[player.name].walking == nil then
+                FixPlayerRecord(player)
+            end
+
+            local last_pos = global.players[player.name].running.last_position
+            local curr_pos = player.position
+
+            local delta_x = math.abs(last_pos.x - curr_pos.x)
+            local delta_y = math.abs(last_pos.y - curr_pos.y)
+            local distance_walked = math.sqrt(delta_x ^ 2 + delta_y ^ 2) / settings.global["DoingThingsByHand-running"].value
+
+            global.players[player.name].running.last_position = player.position
+
+            local playerRunning = global.players[player.name].running
+            playerRunning.count = playerRunning.count + distance_walked
+            player.print(playerRunning.count)
+
+            local current_level = math.floor(CurrentLevel(playerRunning.count))
+
+            if current_level ~= playerRunning.level then
+                playerRunning.level = current_level
+                player.character_running_speed_modifier = (playerRunning.level - 1) * 0.1
+                player.print("Running speed bonus has now been increased to .. " .. tostring(player.character_running_speed_modifier * 100) .. "%", global.print_colour)
+            end
+        end
+    end
+end
+
+local function TrackDistanceTravelled(e)
+    for ixd, _ in pairs(game.connected_players) do
+        local player = game.get_player(ixd)
+        TrackDistanceTravelledByPlayer(player)
+    end
+end
+
+local function OnRuntimeModSettingChanged(e)
+    if game.mod_setting_prototypes[e.setting].mod == "DoingThingsByHand" then
+        global.cache = {}
     end
 end
 
@@ -154,9 +206,11 @@ commands.add_command(
         FixPlayerRecord(player)
         local playerCrafting = global.players[player.name].crafting
         local playerMining = global.players[player.name].mining
+        local playerRunning = global.players[player.name].running
 
         calling_player.print(string.format("Mining .. (Level .. %2.2f) .. (Bonus %d%%)", CurrentLevel(playerMining.count), player.character_mining_speed_modifier * 100), global.print_colour)
         calling_player.print(string.format("Crafting .. (Level .. %2.2f) .. (Bonus %d%%)", CurrentLevel(playerCrafting.count), player.character_crafting_speed_modifier * 100), global.print_colour)
+        calling_player.print(string.format("Running .. (Level .. %2.2f) .. (Bonus %d%%)", CurrentLevel(playerRunning.count), player.character_running_speed_modifier * 100), global.print_colour)
     end
 )
 
@@ -164,6 +218,8 @@ script.on_init(OnInit)
 script.on_load(OnLoad)
 script.on_configuration_changed(OnConfigurationChanged)
 script.on_nth_tick(1800, ReApplyBonuses)
+script.on_nth_tick(61, TrackDistanceTravelled)
+script.on_event(defines.events.on_runtime_mod_setting_changed, OnRuntimeModSettingChanged)
 script.on_event(defines.events.on_player_crafted_item, OnPlayerCraftedItem)
 script.on_event(defines.events.on_player_mined_entity, OnPlayerMinedEntity)
 script.on_event(defines.events.on_player_joined_game, OnPlayerJoinedGame)

@@ -148,7 +148,7 @@ end
 
 local function TrackDistanceTravelledByPlayer(player)
     if player.controller_type == defines.controllers.character then
-        if (player.afk_time < 30 or player.walking_state.walking) and player.vehicle == nil then
+        if (player.afk_time < (10 * 60 * 60) or player.walking_state.walking) and player.vehicle == nil then
             if global.players[player.name] == nil or global.players[player.name].running == nil then
                 FixPlayerRecord(player)
             end
@@ -167,12 +167,8 @@ local function TrackDistanceTravelledByPlayer(player)
                 playerRunning.count = playerRunning.count + distance_walked
 
                 if global.players[player.name].debug then
-                    local msg = string.format("%s,%d,%f,%f,%f,%f,%f,%f\n", player.name, game.tick, last_pos.x, last_pos.y, curr_pos.x, curr_pos.y, distance_walked, playerRunning.count)
-                    if game.is_multiplayer() then
-                        game.write_file("TrackDistanceTravelledByPlayer.csv", msg, true, 0)
-                    else
-                        game.write_file("TrackDistanceTravelledByPlayer.csv", msg, true)
-                    end
+                    local msg = string.format("TrackDistanceTravelledByPlayer,%s,%d,%f,%f,%f,%f,%f,%f\n", player.name, game.tick, last_pos.x, last_pos.y, curr_pos.x, curr_pos.y, distance_walked, playerRunning.count)
+                    log(msg)
                 end
 
                 local current_level = math.floor(CurrentLevel(playerRunning.count))

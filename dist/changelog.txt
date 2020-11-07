@@ -1,4 +1,15 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.1
+Date: 2020-11-07
+  Changes:
+    - Added a command to enable debugging on player(s)
+    - Used deepcopy when tracking player position changes.
+---------------------------------------------------------------------------------------------------
+Version: 0.4.0
+Date: 2020-11-03
+  Changes:
+    - Added a GUI to show ranking on MP servers.
+---------------------------------------------------------------------------------------------------
 Version: 0.3.1
 Date: 02. 10. 2020
   Bugfixes:

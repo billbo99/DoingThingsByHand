@@ -1,5 +1,7 @@
 require "util"
 
+local Gui = require("gui")
+
 local function CurrentLevel(param)
     return (math.sqrt(param + 25) + 5) / 10
 end
@@ -39,6 +41,10 @@ local function OnInit(e)
     global.cache = global.cache or {}
     global.players = global.players or {}
     global.print_colour = {r = 255, g = 255, b = 0}
+
+    for i, _ in pairs(game.players) do
+        Gui.CreateTopGui(game.players[i])
+    end
 end
 
 local function OnLoad(e)
@@ -143,28 +149,39 @@ end
 local function TrackDistanceTravelledByPlayer(player)
     if player.controller_type == defines.controllers.character then
         if (player.afk_time < 30 or player.walking_state.walking) and player.vehicle == nil then
-            if global.players[player.name] == nil or global.players[player.name].walking == nil then
+            if global.players[player.name] == nil or global.players[player.name].running == nil then
                 FixPlayerRecord(player)
             end
 
-            local last_pos = global.players[player.name].running.last_position
-            local curr_pos = player.position
+            local last_pos = table.deepcopy(global.players[player.name].running.last_position)
+            local curr_pos = table.deepcopy(player.position)
 
-            local delta_x = math.abs(last_pos.x - curr_pos.x)
-            local delta_y = math.abs(last_pos.y - curr_pos.y)
-            local distance_walked = math.sqrt(delta_x ^ 2 + delta_y ^ 2) / settings.global["DoingThingsByHand-running"].value
+            global.players[player.name].running.last_position = table.deepcopy(player.position)
 
-            global.players[player.name].running.last_position = player.position
+            if last_pos and curr_pos and last_pos.x and last_pos.y and curr_pos.x and curr_pos.y then
+                local delta_x = math.abs(last_pos.x - curr_pos.x)
+                local delta_y = math.abs(last_pos.y - curr_pos.y)
+                local distance_walked = math.sqrt(delta_x ^ 2 + delta_y ^ 2) / settings.global["DoingThingsByHand-running"].value
 
-            local playerRunning = global.players[player.name].running
-            playerRunning.count = playerRunning.count + distance_walked
+                local playerRunning = global.players[player.name].running
+                playerRunning.count = playerRunning.count + distance_walked
 
-            local current_level = math.floor(CurrentLevel(playerRunning.count))
+                if global.players[player.name].debug then
+                    local msg = string.format("%s,%d,%f,%f,%f,%f,%f,%f\n", player.name, game.tick, last_pos.x, last_pos.y, curr_pos.x, curr_pos.y, distance_walked, playerRunning.count)
+                    if game.is_multiplayer() then
+                        game.write_file("TrackDistanceTravelledByPlayer.csv", msg, true, 0)
+                    else
+                        game.write_file("TrackDistanceTravelledByPlayer.csv", msg, true)
+                    end
+                end
 
-            if current_level ~= playerRunning.level then
-                playerRunning.level = current_level
-                player.character_running_speed_modifier = (playerRunning.level - 1) * 0.1
-                player.print("Running speed bonus has now been increased to .. " .. tostring(player.character_running_speed_modifier * 100) .. "%", global.print_colour)
+                local current_level = math.floor(CurrentLevel(playerRunning.count))
+
+                if current_level ~= playerRunning.level then
+                    playerRunning.level = current_level
+                    player.character_running_speed_modifier = (playerRunning.level - 1) * 0.1
+                    player.print("Running speed bonus has now been increased to .. " .. tostring(player.character_running_speed_modifier * 100) .. "%", global.print_colour)
+                end
             end
         end
     end
@@ -185,12 +202,42 @@ end
 
 local function OnPlayerCreated(e)
     local player = game.get_player(e.player_index)
+    Gui.CreateTopGui(game.players[e.player_index])
     FixPlayerRecord(player)
 end
 
 local function OnPlayerJoinedGame(e)
     OnPlayerCreated(e)
+    Gui.DestroyGui(game.players[e.player_index])
+    Gui.CreateTopGui(game.players[e.player_index])
 end
+
+local function OnGuiClick(e)
+    local mod = e.element.get_mod()
+    if mod == nil or mod ~= "DoingThingsByHand" then
+        return
+    end
+
+    FixPlayerRecord(game.get_player(e.player_index))
+    Gui.onGuiClick(e)
+end
+
+commands.add_command(
+    "DoingThingsByHand_Debug",
+    "DoingThingsByHand_Debug [player]",
+    function(event)
+        local player = game.players[event.player_index]
+        if event.parameter and game.get_player(event.parameter) then
+            player = game.get_player(event.parameter)
+        end
+
+        if global.players[player.name].debug then
+            global.players[player.name].debug = nil
+        else
+            global.players[player.name].debug = true
+        end
+    end
+)
 
 commands.add_command(
     "HowSpeedy",
@@ -224,3 +271,4 @@ script.on_event(defines.events.on_player_mined_entity, OnPlayerMinedEntity)
 script.on_event(defines.events.on_player_joined_game, OnPlayerJoinedGame)
 script.on_event(defines.events.on_player_respawned, ReApplyBonuses)
 script.on_event(defines.events.on_player_created, OnPlayerCreated)
+script.on_event(defines.events.on_gui_click, OnGuiClick)

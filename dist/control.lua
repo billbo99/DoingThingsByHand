@@ -148,7 +148,7 @@ end
 
 local function TrackDistanceTravelledByPlayer(player)
     if player.controller_type == defines.controllers.character then
-        if (player.afk_time < (10 * 60 * 60) or player.walking_state.walking) and player.vehicle == nil then
+        if (player.afk_time > (10 * 60 * 60) or player.walking_state.walking) and player.vehicle == nil then
             if global.players[player.name] == nil or global.players[player.name].running == nil then
                 FixPlayerRecord(player)
             end

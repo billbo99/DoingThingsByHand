@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.5.0
+Date: 2020-11-09
+  Changes:
+    - Points are now reduced by the inverse of the bonus, as people were getting to high levels
+      - eg 100% bonus gives you 50% points per operation.
+    - Added checkbox to enabled/disable a bonus
+    - Added a "per player" field so they can set MAX percentage bonus
+---------------------------------------------------------------------------------------------------
 Version: 0.4.4
 Date: 2020-11-09
   Changes:

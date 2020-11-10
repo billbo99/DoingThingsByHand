@@ -8,9 +8,51 @@ end
 
 local function ReApplyBonus(player)
     if player.controller_type == defines.controllers.character then
-        player.character_crafting_speed_modifier = (math.floor(CurrentLevel(global.players[player.name].crafting.count)) - 1) * 0.1
-        player.character_mining_speed_modifier = (math.floor(CurrentLevel(global.players[player.name].mining.count)) - 1) * 0.1
-        player.character_running_speed_modifier = (math.floor(CurrentLevel(global.players[player.name].running.count)) - 1) * 0.1
+        -- crafting
+        if settings.global["DoingThingsByHand-disable-crafting"].value then
+            local modifier = (math.floor(CurrentLevel(global.players[player.name].crafting.count)) - 1) * 0.1
+            local player_setting = settings.get_player_settings(player)["DoingThingsByHand-player-max-crafting"].value
+
+            if player_setting and player_setting > 1 and (modifier * 100) > player_setting then
+                modifier = player_setting / 100
+            end
+
+            if modifier ~= math.huge then
+                player.character_crafting_speed_modifier = modifier
+            end
+        else
+            player.character_crafting_speed_modifier = 0
+        end
+
+        -- mining
+        if settings.global["DoingThingsByHand-disable-mining"].value then
+            local modifier = (math.floor(CurrentLevel(global.players[player.name].mining.count)) - 1) * 0.1
+            local player_setting = settings.get_player_settings(player)["DoingThingsByHand-player-max-mining"].value
+
+            if player_setting and player_setting > 1 and (modifier * 100) > player_setting then
+                modifier = player_setting / 100
+            end
+            if modifier ~= math.huge then
+                player.character_mining_speed_modifier = modifier
+            end
+        else
+            player.character_mining_speed_modifier = 0
+        end
+
+        -- running
+        if settings.global["DoingThingsByHand-disable-running"].value then
+            local modifier = (math.floor(CurrentLevel(global.players[player.name].running.count)) - 1) * 0.1
+            local player_setting = settings.get_player_settings(player)["DoingThingsByHand-player-max-running"].value
+
+            if player_setting and player_setting > 1 and (modifier * 100) > player_setting then
+                modifier = player_setting / 100
+            end
+            if modifier ~= math.huge then
+                player.character_running_speed_modifier = modifier
+            end
+        else
+            player.character_running_speed_modifier = 0
+        end
     end
 end
 
@@ -31,8 +73,7 @@ local function FixPlayerRecord(player)
 end
 
 local function ReApplyBonuses(e)
-    for ixd, _ in pairs(game.connected_players) do
-        local player = game.get_player(ixd)
+    for _, player in pairs(game.connected_players) do
         FixPlayerRecord(player)
     end
 end
@@ -106,13 +147,13 @@ local function OnPlayerMinedEntity(e)
         end
 
         local playerMining = global.players[player.name].mining
-        playerMining.count = playerMining.count + points
+        playerMining.count = playerMining.count + (points / (player.character_mining_speed_modifier + 1))
 
         local current_level = math.floor(CurrentLevel(playerMining.count))
 
         if current_level ~= playerMining.level then
             playerMining.level = current_level
-            player.character_mining_speed_modifier = (playerMining.level - 1) * 0.1
+            ReApplyBonus(player)
             player.print("Mining speed bonus has now been increased to .. " .. tostring(player.character_mining_speed_modifier * 100) .. "%", global.print_colour)
         end
     end
@@ -134,13 +175,13 @@ local function OnPlayerCraftedItem(e)
         end
 
         local playerCrafting = global.players[player.name].crafting
-        playerCrafting.count = playerCrafting.count + points
+        playerCrafting.count = playerCrafting.count + (points / (player.character_crafting_speed_modifier + 1))
 
         local current_level = math.floor(CurrentLevel(playerCrafting.count))
 
         if current_level ~= playerCrafting.level then
             playerCrafting.level = current_level
-            player.character_crafting_speed_modifier = (playerCrafting.level - 1) * 0.1
+            ReApplyBonus(player)
             player.print("Crafting speed bonus has now been increased to .. " .. tostring(player.character_crafting_speed_modifier * 100) .. "%", global.print_colour)
         end
     end
@@ -164,7 +205,7 @@ local function TrackDistanceTravelledByPlayer(player)
                 local distance_walked = math.sqrt(delta_x ^ 2 + delta_y ^ 2) / settings.global["DoingThingsByHand-running"].value
 
                 local playerRunning = global.players[player.name].running
-                playerRunning.count = playerRunning.count + distance_walked
+                playerRunning.count = playerRunning.count + (distance_walked / (player.character_running_speed_modifier + 1))
 
                 if global.players[player.name].debug then
                     local msg = string.format("TrackDistanceTravelledByPlayer,%s,%d,%f,%f,%f,%f,%f,%f\n", player.name, game.tick, last_pos.x, last_pos.y, curr_pos.x, curr_pos.y, distance_walked, playerRunning.count)
@@ -175,7 +216,7 @@ local function TrackDistanceTravelledByPlayer(player)
 
                 if current_level ~= playerRunning.level then
                     playerRunning.level = current_level
-                    player.character_running_speed_modifier = (playerRunning.level - 1) * 0.1
+                    ReApplyBonus(player)
                     player.print("Running speed bonus has now been increased to .. " .. tostring(player.character_running_speed_modifier * 100) .. "%", global.print_colour)
                 end
             end
@@ -184,8 +225,7 @@ local function TrackDistanceTravelledByPlayer(player)
 end
 
 local function TrackDistanceTravelled(e)
-    for ixd, _ in pairs(game.connected_players) do
-        local player = game.get_player(ixd)
+    for _, player in pairs(game.connected_players) do
         TrackDistanceTravelledByPlayer(player)
     end
 end
@@ -193,6 +233,15 @@ end
 local function OnRuntimeModSettingChanged(e)
     if game.mod_setting_prototypes[e.setting].mod == "DoingThingsByHand" then
         global.cache = {}
+
+        if e.setting_type == "runtime-per-user" then
+            local player = game.get_player(e.player_index)
+            ReApplyBonus(player)
+        else
+            for _, player in pairs(game.players) do
+                ReApplyBonus(player)
+            end
+        end
     end
 end
 
@@ -250,9 +299,22 @@ commands.add_command(
         local playerMining = global.players[player.name].mining
         local playerRunning = global.players[player.name].running
 
-        calling_player.print(string.format("Mining .. (Level .. %2.2f) .. (Bonus %d%%)", CurrentLevel(playerMining.count), player.character_mining_speed_modifier * 100), global.print_colour)
-        calling_player.print(string.format("Crafting .. (Level .. %2.2f) .. (Bonus %d%%)", CurrentLevel(playerCrafting.count), player.character_crafting_speed_modifier * 100), global.print_colour)
-        calling_player.print(string.format("Running .. (Level .. %2.2f) .. (Bonus %d%%)", CurrentLevel(playerRunning.count), player.character_running_speed_modifier * 100), global.print_colour)
+        if settings.global["DoingThingsByHand-disable-crafting"].value then
+            calling_player.print(string.format("Crafting .. (Level .. %2.2f) .. (Bonus %d%%)", CurrentLevel(playerCrafting.count), player.character_crafting_speed_modifier * 100), global.print_colour)
+        else
+            calling_player.print("Crafting bonus .. disabled")
+        end
+        if settings.global["DoingThingsByHand-disable-mining"].value then
+            calling_player.print(string.format("Mining .. (Level .. %2.2f) .. (Bonus %d%%)", CurrentLevel(playerMining.count), player.character_mining_speed_modifier * 100), global.print_colour)
+        else
+            calling_player.print("Mining bonus .. disabled")
+        end
+
+        if settings.global["DoingThingsByHand-disable-running"].value then
+            calling_player.print(string.format("Running .. (Level .. %2.2f) .. (Bonus %d%%)", CurrentLevel(playerRunning.count), player.character_running_speed_modifier * 100), global.print_colour)
+        else
+            calling_player.print("Running bonus .. disabled")
+        end
     end
 )
 

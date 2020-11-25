@@ -12,6 +12,9 @@ local function ReApplyBonus(player)
         if not settings.global["DoingThingsByHand-disable-crafting"].value then
             local modifier = (math.floor(CurrentLevel(global.players[player.name].crafting.count)) - 1) * 0.1
             local player_setting = settings.get_player_settings(player)["DoingThingsByHand-player-max-crafting"].value
+            if player_setting > 65536 then
+                player_setting = 65536
+            end
 
             if player_setting and player_setting > 1 and (modifier * 100) > player_setting then
                 modifier = player_setting / 100
@@ -28,6 +31,9 @@ local function ReApplyBonus(player)
         if not settings.global["DoingThingsByHand-disable-mining"].value then
             local modifier = (math.floor(CurrentLevel(global.players[player.name].mining.count)) - 1) * 0.1
             local player_setting = settings.get_player_settings(player)["DoingThingsByHand-player-max-mining"].value
+            if player_setting > 65536 then
+                player_setting = 65536
+            end
 
             if player_setting and player_setting > 1 and (modifier * 100) > player_setting then
                 modifier = player_setting / 100
@@ -43,6 +49,9 @@ local function ReApplyBonus(player)
         if not settings.global["DoingThingsByHand-disable-running"].value then
             local modifier = (math.floor(CurrentLevel(global.players[player.name].running.count)) - 1) * 0.1
             local player_setting = settings.get_player_settings(player)["DoingThingsByHand-player-max-running"].value
+            if player_setting > 65536 then
+                player_setting = 65536
+            end
 
             if player_setting and player_setting > 1 and (modifier * 100) > player_setting then
                 modifier = player_setting / 100

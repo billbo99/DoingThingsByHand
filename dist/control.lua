@@ -88,6 +88,7 @@ local function ReApplyBonuses(e)
 end
 
 local function OnInit(e)
+    global.queue = global.queue or {}
     global.cache = global.cache or {}
     global.players = global.players or {}
     global.print_colour = {r = 255, g = 255, b = 0}
@@ -136,6 +137,36 @@ local function OnConfigurationChanged(e)
             end
         end
         global.print_colour = {r = 255, g = 255, b = 0}
+    end
+end
+
+local function CheckQueue(e)
+    for k, v in pairs(global.queue) do
+        if e.tick >= k then
+            log(v)
+        end
+    end
+end
+
+local function OnScriptTriggerEffect(e)
+    if e.effect_id == "eat_raw_fish_pre_id" then
+        local player = e.source_entity.player
+        game.print("pre" .. e.source_entity.health)
+    end
+    if e.effect_id == "eat_raw_fish_post_id" then
+        game.print("post" .. e.source_entity.health)
+    end
+end
+
+local function OnPlayerUsedCapsule(e)
+    local player = game.get_player(e.player_index)
+
+    if e.item and e.item.name == "raw-fish" then
+        global.queue[e.tick + 1] = {
+            action = "eat-fish",
+            player = player,
+            health_at_time_of_eating_fish = player.character.health
+        }
     end
 end
 
@@ -309,20 +340,20 @@ commands.add_command(
         local playerRunning = global.players[player.name].running
 
         if settings.global["DoingThingsByHand-disable-crafting"].value then
-            calling_player.print(string.format("Crafting .. (Level .. %2.2f) .. (Bonus %d%%)", CurrentLevel(playerCrafting.count), player.character_crafting_speed_modifier * 100), global.print_colour)
-        else
             calling_player.print("Crafting bonus .. disabled")
+        else
+            calling_player.print(string.format("Crafting .. (Level .. %2.2f) .. (Bonus %d%%)", CurrentLevel(playerCrafting.count), player.character_crafting_speed_modifier * 100), global.print_colour)
         end
         if settings.global["DoingThingsByHand-disable-mining"].value then
-            calling_player.print(string.format("Mining .. (Level .. %2.2f) .. (Bonus %d%%)", CurrentLevel(playerMining.count), player.character_mining_speed_modifier * 100), global.print_colour)
-        else
             calling_player.print("Mining bonus .. disabled")
+        else
+            calling_player.print(string.format("Mining .. (Level .. %2.2f) .. (Bonus %d%%)", CurrentLevel(playerMining.count), player.character_mining_speed_modifier * 100), global.print_colour)
         end
 
         if settings.global["DoingThingsByHand-disable-running"].value then
-            calling_player.print(string.format("Running .. (Level .. %2.2f) .. (Bonus %d%%)", CurrentLevel(playerRunning.count), player.character_running_speed_modifier * 100), global.print_colour)
-        else
             calling_player.print("Running bonus .. disabled")
+        else
+            calling_player.print(string.format("Running .. (Level .. %2.2f) .. (Bonus %d%%)", CurrentLevel(playerRunning.count), player.character_running_speed_modifier * 100), global.print_colour)
         end
     end
 )
@@ -332,6 +363,7 @@ script.on_load(OnLoad)
 script.on_configuration_changed(OnConfigurationChanged)
 script.on_nth_tick(1800, ReApplyBonuses)
 script.on_nth_tick(61, TrackDistanceTravelled)
+script.on_nth_tick(20, CheckQueue)
 script.on_event(defines.events.on_runtime_mod_setting_changed, OnRuntimeModSettingChanged)
 script.on_event(defines.events.on_player_crafted_item, OnPlayerCraftedItem)
 script.on_event(defines.events.on_player_mined_entity, OnPlayerMinedEntity)
@@ -339,3 +371,5 @@ script.on_event(defines.events.on_player_joined_game, OnPlayerJoinedGame)
 script.on_event(defines.events.on_player_respawned, ReApplyBonuses)
 script.on_event(defines.events.on_player_created, OnPlayerCreated)
 script.on_event(defines.events.on_gui_click, OnGuiClick)
+script.on_event(defines.events.on_player_used_capsule, OnPlayerUsedCapsule)
+script.on_event(defines.events.on_script_trigger_effect, OnScriptTriggerEffect)

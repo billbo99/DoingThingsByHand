@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.7.0
+Date: 2020-11-27
+  Changes:
+    - Points are collected from healing by eating fish.  Each level gives you 10% HP increase off your base character
+---------------------------------------------------------------------------------------------------
 Version: 0.6.2
 Date: 2020-11-26
   Bugfixes:

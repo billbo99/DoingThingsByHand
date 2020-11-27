@@ -50,7 +50,7 @@ function Gui.CreateMainGui(player)
 
         DoingThingsByHandMain.add({type = "label", caption = "Doing Things by Hand", style = "heading_1_label"})
 
-        local headers = {"crafting", "mining", "running"}
+        local headers = {"crafting", "mining", "running", "health"}
         local column_count = #headers + 1
         local f = DoingThingsByHandMain.add({type = "table", style = "mod_info_table", column_count = column_count})
 

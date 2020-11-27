@@ -9,7 +9,7 @@ end
 local function ReApplyBonus(player)
     if player.controller_type == defines.controllers.character then
         -- crafting
-        if not settings.global["DoingThingsByHand-disable-crafting"].value then
+        if not settings.global["DoingThingsByHand-disable-crafting_bonus"].value then
             local modifier = (math.floor(CurrentLevel(global.players[player.name].crafting.count)) - 1) * 0.1
             local player_setting = settings.get_player_settings(player)["DoingThingsByHand-player-max-crafting"].value
             if player_setting > 65536 then
@@ -28,7 +28,7 @@ local function ReApplyBonus(player)
         end
 
         -- mining
-        if not settings.global["DoingThingsByHand-disable-mining"].value then
+        if not settings.global["DoingThingsByHand-disable-mining_bonus"].value then
             local modifier = (math.floor(CurrentLevel(global.players[player.name].mining.count)) - 1) * 0.1
             local player_setting = settings.get_player_settings(player)["DoingThingsByHand-player-max-mining"].value
             if player_setting > 65536 then
@@ -46,7 +46,7 @@ local function ReApplyBonus(player)
         end
 
         -- running
-        if not settings.global["DoingThingsByHand-disable-running"].value then
+        if not settings.global["DoingThingsByHand-disable-running_bonus"].value then
             local modifier = (math.floor(CurrentLevel(global.players[player.name].running.count)) - 1) * 0.1
             local player_setting = settings.get_player_settings(player)["DoingThingsByHand-player-max-running"].value
             if player_setting > 65536 then
@@ -61,6 +61,25 @@ local function ReApplyBonus(player)
             end
         else
             player.character_running_speed_modifier = 0
+        end
+
+        -- health
+        if not settings.global["DoingThingsByHand-disable-health_bonus"].value then
+            local max_health = player.character.prototype.max_health
+            local modifier = (math.floor(CurrentLevel(global.players[player.name].health.count)) - 1) * (max_health * 0.1)
+            local player_setting = settings.get_player_settings(player)["DoingThingsByHand-player-max-health"].value
+            if player_setting > 65536 then
+                player_setting = 65536
+            end
+
+            if player_setting and player_setting > 1 and modifier > player_setting then
+                modifier = player_setting
+            end
+            if modifier ~= math.huge then
+                player.character_health_bonus = modifier
+            end
+        else
+            player.character_health_bonus = 0
         end
     end
 end
@@ -77,6 +96,9 @@ local function FixPlayerRecord(player)
     end
     if global.players[player.name].running == nil then
         global.players[player.name].running = {count = 0, level = 1, last_position = {x = 0, y = 0}}
+    end
+    if global.players[player.name].health == nil then
+        global.players[player.name].health = {count = 0, level = 1, temp_data = {}}
     end
     ReApplyBonus(player)
 end
@@ -148,25 +170,42 @@ local function CheckQueue(e)
     end
 end
 
-local function OnScriptTriggerEffect(e)
-    if e.effect_id == "eat_raw_fish_pre_id" then
-        local player = e.source_entity.player
-        game.print("pre" .. e.source_entity.health)
-    end
-    if e.effect_id == "eat_raw_fish_post_id" then
-        game.print("post" .. e.source_entity.health)
+local function EatRawFish(player)
+    if player.controller_type == defines.controllers.character then
+        if global.players[player.name] == nil or global.players[player.name].health == nil then
+            FixPlayerRecord(player)
+        end
+        local points = global.players[player.name].health.temp_data.post - global.players[player.name].health.temp_data.pre
+        if points > 10 then
+            points = points / settings.global["DoingThingsByHand-health"].value
+
+            local playerHealth = global.players[player.name].health
+            local max_health = player.character.prototype.max_health
+            local health_bonus = (max_health + player.character_health_bonus) / max_health
+            playerHealth.count = playerHealth.count + (points / health_bonus)
+
+            local current_level = math.floor(CurrentLevel(playerHealth.count))
+            if current_level ~= playerHealth.level then
+                playerHealth.level = current_level
+                ReApplyBonus(player)
+                player.print("Health bonus has now been increased to .. " .. tostring(player.character_health_bonus), global.print_colour)
+            end
+        end
     end
 end
 
-local function OnPlayerUsedCapsule(e)
-    local player = game.get_player(e.player_index)
-
-    if e.item and e.item.name == "raw-fish" then
-        global.queue[e.tick + 1] = {
-            action = "eat-fish",
-            player = player,
-            health_at_time_of_eating_fish = player.character.health
-        }
+local function OnScriptTriggerEffect(e)
+    if e.effect_id == "eat_raw_fish_pre_id" then
+        local player = e.source_entity.player
+        if global.players[player.name] == nil or global.players[player.name].health == nil then
+            FixPlayerRecord(player)
+        end
+        global.players[player.name].health.temp_data.pre = e.source_entity.health
+    end
+    if e.effect_id == "eat_raw_fish_post_id" then
+        local player = e.source_entity.player
+        global.players[player.name].health.temp_data.post = e.source_entity.health
+        EatRawFish(player)
     end
 end
 
@@ -338,22 +377,30 @@ commands.add_command(
         local playerCrafting = global.players[player.name].crafting
         local playerMining = global.players[player.name].mining
         local playerRunning = global.players[player.name].running
+        local playerHealth = global.players[player.name].health
 
-        if settings.global["DoingThingsByHand-disable-crafting"].value then
+        if settings.global["DoingThingsByHand-disable-crafting_bonus"].value then
             calling_player.print("Crafting bonus .. disabled")
         else
             calling_player.print(string.format("Crafting .. (Level .. %2.2f) .. (Bonus %d%%)", CurrentLevel(playerCrafting.count), player.character_crafting_speed_modifier * 100), global.print_colour)
         end
-        if settings.global["DoingThingsByHand-disable-mining"].value then
+
+        if settings.global["DoingThingsByHand-disable-mining_bonus"].value then
             calling_player.print("Mining bonus .. disabled")
         else
             calling_player.print(string.format("Mining .. (Level .. %2.2f) .. (Bonus %d%%)", CurrentLevel(playerMining.count), player.character_mining_speed_modifier * 100), global.print_colour)
         end
 
-        if settings.global["DoingThingsByHand-disable-running"].value then
+        if settings.global["DoingThingsByHand-disable-running_bonus"].value then
             calling_player.print("Running bonus .. disabled")
         else
             calling_player.print(string.format("Running .. (Level .. %2.2f) .. (Bonus %d%%)", CurrentLevel(playerRunning.count), player.character_running_speed_modifier * 100), global.print_colour)
+        end
+
+        if settings.global["DoingThingsByHand-disable-health_bonus"].value then
+            calling_player.print("Health bonus .. disabled")
+        else
+            calling_player.print(string.format("Health .. (Level .. %2.2f) .. (Bonus %d)", CurrentLevel(playerHealth.count), player.character_health_bonus), global.print_colour)
         end
     end
 )
@@ -371,5 +418,4 @@ script.on_event(defines.events.on_player_joined_game, OnPlayerJoinedGame)
 script.on_event(defines.events.on_player_respawned, ReApplyBonuses)
 script.on_event(defines.events.on_player_created, OnPlayerCreated)
 script.on_event(defines.events.on_gui_click, OnGuiClick)
-script.on_event(defines.events.on_player_used_capsule, OnPlayerUsedCapsule)
 script.on_event(defines.events.on_script_trigger_effect, OnScriptTriggerEffect)

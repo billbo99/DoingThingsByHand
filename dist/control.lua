@@ -162,14 +162,6 @@ local function OnConfigurationChanged(e)
     end
 end
 
-local function CheckQueue(e)
-    for k, v in pairs(global.queue) do
-        if e.tick >= k then
-            log(v)
-        end
-    end
-end
-
 local function EatRawFish(player)
     if player.controller_type == defines.controllers.character then
         if global.players[player.name] == nil or global.players[player.name].health == nil then
@@ -410,7 +402,6 @@ script.on_load(OnLoad)
 script.on_configuration_changed(OnConfigurationChanged)
 script.on_nth_tick(1800, ReApplyBonuses)
 script.on_nth_tick(61, TrackDistanceTravelled)
-script.on_nth_tick(20, CheckQueue)
 script.on_event(defines.events.on_runtime_mod_setting_changed, OnRuntimeModSettingChanged)
 script.on_event(defines.events.on_player_crafted_item, OnPlayerCraftedItem)
 script.on_event(defines.events.on_player_mined_entity, OnPlayerMinedEntity)

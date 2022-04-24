@@ -32,3 +32,26 @@ end
 table.insert(new_target_effects, {type = "script", effect_id = "eat_raw_fish_post_id"})
 
 raw_fish.capsule_action.attack_parameters.ammo_type.action.action_delivery.target_effects = new_target_effects
+
+-- SE med kit support
+if mods["space-exploration"] then
+    local medkits = {"se-medpack", "se-medpack-2", "se-medpack-3", "se-medpack-4"}
+    for i, medkit in pairs(medkits) do
+        local capsule = data.raw.capsule[medkit]
+        log(serpent.block(capsule))
+
+        local target_effects = table.deepcopy(capsule.capsule_action.attack_parameters.ammo_type.action.action_delivery.target_effects)
+        if is_array(target_effects) == -1 then
+            target_effects = {target_effects}
+        end
+
+        local new_target_effects = {{type = "script", effect_id = "eat_raw_fish_pre_id"}}
+        for _, effect in pairs(target_effects) do
+            table.insert(new_target_effects, effect)
+        end
+        table.insert(new_target_effects, {type = "script", effect_id = "eat_raw_fish_post_id"})
+
+        capsule.capsule_action.attack_parameters.ammo_type.action.action_delivery.target_effects = new_target_effects
+
+    end
+end

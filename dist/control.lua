@@ -158,6 +158,14 @@ local function OnConfigurationChanged(e)
                 global.mining = nil
             end
         end
+
+        -- Migration to add health
+        for _, player in pairs(game.players) do
+            if global.players and global.players[player.name] and global.players[player.name].health == nil then
+                global.players[player.name].health = {count = 0, level = 1, temp_data = {}}
+            end
+        end
+
         global.print_colour = {r = 255, g = 255, b = 0}
     end
 end

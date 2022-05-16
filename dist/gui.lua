@@ -51,12 +51,17 @@ function Gui.CreateMainGui(player)
         DoingThingsByHandMain.add({type = "label", caption = "Doing Things by Hand", style = "heading_1_label"})
 
         local headers = {"crafting", "mining", "running", "health"}
-        local column_count = #headers + 1
+        local column_count = (#headers*2) + 1
         local f = DoingThingsByHandMain.add({type = "table", style = "mod_info_table", column_count = column_count})
 
         f.add({type = "label", caption = "Player", style = "bold_label"})
         for _, header in pairs(headers) do
             f.add({type = "label", caption = firstToUpper(header)})
+            if header == "health" then
+                f.add({type = "label", caption = "+HP"})
+            else
+                f.add({type = "label", caption = "Bonus"})
+            end
         end
 
         local score = {}
@@ -72,9 +77,22 @@ function Gui.CreateMainGui(player)
         local rank = Utils.sortedKeys(score)
         for _, player_name in pairs(rank) do
             -- string.format("Mining .. (Level .. %2.3f) .. (Bonus %d%%)", CurrentLevel(playerMining.count)
+            local _player = game.get_player(player_name)
+
             f.add({type = "label", caption = player_name})
             for _, header in pairs(headers) do
-                f.add({type = "label", caption = string.format("%2.2f", CurrentLevel(global.players[player_name][header].count))})
+                local caption = string.format("Lv %2.2f", CurrentLevel(global.players[player_name][header].count))
+                f.add({type = "label", caption = caption})
+                if header == "crafting" then
+                    caption = tostring(_player.character_crafting_speed_modifier * 100) .. "%"
+                elseif header == "mining" then
+                    caption = tostring(_player.character_mining_speed_modifier * 100) .. "%"
+                elseif header == "running" then
+                    caption = tostring(_player.character_running_speed_modifier * 100) .. "%"
+                elseif header == "health" then
+                    caption = _player.character_health_bonus .. " hp"
+                end
+                f.add({type = "label", caption = caption})
             end
         end
     end

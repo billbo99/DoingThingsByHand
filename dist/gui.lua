@@ -78,19 +78,23 @@ function Gui.CreateMainGui(player)
         for _, player_name in pairs(rank) do
             -- string.format("Mining .. (Level .. %2.3f) .. (Bonus %d%%)", CurrentLevel(playerMining.count)
             local _player = game.get_player(player_name)
-
             f.add({type = "label", caption = player_name})
+
             for _, header in pairs(headers) do
                 local caption = string.format("Lv %2.2f", CurrentLevel(global.players[player_name][header].count))
                 f.add({type = "label", caption = caption})
-                if header == "crafting" then
-                    caption = tostring(_player.character_crafting_speed_modifier * 100) .. "%"
-                elseif header == "mining" then
-                    caption = tostring(_player.character_mining_speed_modifier * 100) .. "%"
-                elseif header == "running" then
-                    caption = tostring(_player.character_running_speed_modifier * 100) .. "%"
-                elseif header == "health" then
-                    caption = _player.character_health_bonus .. " hp"
+                if player.controller_type == defines.controllers.ghost then
+                    caption = "na"
+                else
+                    if header == "crafting" then
+                        caption = tostring(_player.character_crafting_speed_modifier * 100) .. "%"
+                    elseif header == "mining" then
+                        caption = tostring(_player.character_mining_speed_modifier * 100) .. "%"
+                    elseif header == "running" then
+                        caption = tostring(_player.character_running_speed_modifier * 100) .. "%"
+                    elseif header == "health" then
+                        caption = _player.character_health_bonus .. " hp"
+                    end
                 end
                 f.add({type = "label", caption = caption})
             end

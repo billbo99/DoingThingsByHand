@@ -65,18 +65,20 @@ local function ReApplyBonus(player)
 
         -- health
         if not settings.global["DoingThingsByHand-disable-health_bonus"].value then
-            local max_health = player.character.prototype.max_health
-            local modifier = (math.floor(CurrentLevel(global.players[player.name].health.count)) - 1) * (max_health * 0.1)
-            local player_setting = settings.get_player_settings(player)["DoingThingsByHand-player-max-health"].value
-            if player_setting > 65536 then
-                player_setting = 65536
-            end
+            if player.character then
+                local max_health = player.character.prototype.max_health
+                local modifier = (math.floor(CurrentLevel(global.players[player.name].health.count)) - 1) * (max_health * 0.1)
+                local player_setting = settings.get_player_settings(player)["DoingThingsByHand-player-max-health"].value
+                if player_setting > 65536 then
+                    player_setting = 65536
+                end
 
-            if player_setting and player_setting > 1 and modifier > player_setting then
-                modifier = player_setting
-            end
-            if modifier ~= math.huge then
-                player.character_health_bonus = modifier
+                if player_setting and player_setting > 1 and modifier > player_setting then
+                    modifier = player_setting
+                end
+                if modifier ~= math.huge then
+                    player.character_health_bonus = modifier
+                end
             end
         else
             player.character_health_bonus = 0
@@ -176,7 +178,7 @@ local function EatRawFish(player)
             FixPlayerRecord(player)
         end
         local points = global.players[player.name].health.temp_data.post - global.players[player.name].health.temp_data.pre
-        if points > 10 then
+        if points > 10 and player.character then
             points = points / settings.global["DoingThingsByHand-health"].value
 
             local playerHealth = global.players[player.name].health
@@ -318,6 +320,9 @@ local function OnRuntimeModSettingChanged(e)
             ReApplyBonus(player)
         else
             for _, player in pairs(game.players) do
+                if not global.players[player.name] then
+                    FixPlayerRecord(player)
+                end
                 ReApplyBonus(player)
             end
         end
@@ -344,6 +349,15 @@ local function OnGuiClick(e)
 
     FixPlayerRecord(game.get_player(e.player_index))
     Gui.onGuiClick(e)
+end
+
+local function OnPlayerRespawned(e)
+    local player = game.get_player(e.player_index)
+    FixPlayerRecord(player)
+    if player.gui.left["DoingThingsByHandMain"] then
+        player.gui.left["DoingThingsByHandMain"].destroy()
+        Gui.CreateMainGui(player)
+    end
 end
 
 commands.add_command(
@@ -414,7 +428,7 @@ script.on_event(defines.events.on_runtime_mod_setting_changed, OnRuntimeModSetti
 script.on_event(defines.events.on_player_crafted_item, OnPlayerCraftedItem)
 script.on_event(defines.events.on_player_mined_entity, OnPlayerMinedEntity)
 script.on_event(defines.events.on_player_joined_game, OnPlayerJoinedGame)
-script.on_event(defines.events.on_player_respawned, ReApplyBonuses)
+script.on_event(defines.events.on_player_respawned, OnPlayerRespawned)
 script.on_event(defines.events.on_player_created, OnPlayerCreated)
 script.on_event(defines.events.on_gui_click, OnGuiClick)
 script.on_event(defines.events.on_script_trigger_effect, OnScriptTriggerEffect)

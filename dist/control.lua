@@ -270,7 +270,7 @@ end
 
 local function TrackDistanceTravelledByPlayer(player)
     if player.controller_type == defines.controllers.character then
-        if player.walking_state.walking then
+        if player.walking_state.walking and player.character.name == "character" then
             if global.players[player.name] == nil or global.players[player.name].running == nil then
                 FixPlayerRecord(player)
             end
@@ -418,6 +418,15 @@ commands.add_command(
         end
     end
 )
+
+local function on_character_swapped_event(data)
+    for _, player in pairs(game.connected_players) do
+        if player.character and player.character.unit_number == data.new_unit_number then
+            FixPlayerRecord(player)
+        end
+    end
+end
+remote.add_interface("DoingThingsByHand", {on_character_swapped = on_character_swapped_event})
 
 script.on_init(OnInit)
 script.on_load(OnLoad)

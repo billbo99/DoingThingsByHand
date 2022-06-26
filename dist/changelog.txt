@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.2.0
+Date: 2022-06-26
+  Changes:
+    - Updated to capture when switching between jetpack modes.
+      - note .. when your flying you will not get any additional movement points.
+---------------------------------------------------------------------------------------------------
 Version: 1.1.8
 Date: 2022-06-12
   Bugfixes:

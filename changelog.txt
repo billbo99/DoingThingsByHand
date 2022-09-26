@@ -1,4 +1,16 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.2.2
+Date: 2022-09-26
+  Bugfixes:
+    - Fixed nil crash
+  Changes:
+    - Added some tooltips to crafting / mining bonuses to show top 20 items used to increase the score. Only tracks from this version onwards.
+---------------------------------------------------------------------------------------------------
+Version: 1.2.1
+Date: 2022-07-01
+  Bugfixes:
+    - Crash when in SE nav mod and using GUI.
+---------------------------------------------------------------------------------------------------
 Version: 1.2.0
 Date: 2022-06-26
   Changes:

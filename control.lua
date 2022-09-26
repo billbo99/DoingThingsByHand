@@ -12,8 +12,8 @@ local function ReApplyBonus(player)
         if not settings.global["DoingThingsByHand-disable-crafting_bonus"].value then
             local modifier = (math.floor(CurrentLevel(global.players[player.name].crafting.count)) - 1) * 0.1
             local player_setting = settings.get_player_settings(player)["DoingThingsByHand-player-max-crafting"].value
-            if player_setting > 65536 then
-                player_setting = 65536
+            if player_setting > 65000 then
+                player_setting = 65000
             end
 
             if player_setting and player_setting > 1 and (modifier * 100) > player_setting then
@@ -31,8 +31,8 @@ local function ReApplyBonus(player)
         if not settings.global["DoingThingsByHand-disable-mining_bonus"].value then
             local modifier = (math.floor(CurrentLevel(global.players[player.name].mining.count)) - 1) * 0.1
             local player_setting = settings.get_player_settings(player)["DoingThingsByHand-player-max-mining"].value
-            if player_setting > 65536 then
-                player_setting = 65536
+            if player_setting > 65000 then
+                player_setting = 65000
             end
 
             if player_setting and player_setting > 1 and (modifier * 100) > player_setting then
@@ -49,8 +49,8 @@ local function ReApplyBonus(player)
         if not settings.global["DoingThingsByHand-disable-running_bonus"].value then
             local modifier = (math.floor(CurrentLevel(global.players[player.name].running.count)) - 1) * 0.1
             local player_setting = settings.get_player_settings(player)["DoingThingsByHand-player-max-running"].value
-            if player_setting > 65536 then
-                player_setting = 65536
+            if player_setting > 65000 then
+                player_setting = 65000
             end
 
             if player_setting and player_setting > 1 and (modifier * 100) > player_setting then
@@ -69,8 +69,8 @@ local function ReApplyBonus(player)
                 local max_health = player.character.prototype.max_health
                 local modifier = (math.floor(CurrentLevel(global.players[player.name].health.count)) - 1) * (max_health * 0.1)
                 local player_setting = settings.get_player_settings(player)["DoingThingsByHand-player-max-health"].value
-                if player_setting > 65536 then
-                    player_setting = 65536
+                if player_setting > 65000 then
+                    player_setting = 65000
                 end
 
                 if player_setting and player_setting > 1 and modifier > player_setting then
@@ -91,16 +91,16 @@ local function FixPlayerRecord(player)
         global.players[player.name] = {}
     end
     if global.players[player.name].crafting == nil then
-        global.players[player.name].crafting = {count = 0, level = 1}
+        global.players[player.name].crafting = { count = 0, level = 1 }
     end
     if global.players[player.name].mining == nil then
-        global.players[player.name].mining = {count = 0, level = 1}
+        global.players[player.name].mining = { count = 0, level = 1 }
     end
     if global.players[player.name].running == nil then
-        global.players[player.name].running = {count = 0, level = 1, last_position = {x = 0, y = 0}}
+        global.players[player.name].running = { count = 0, level = 1, last_position = { x = 0, y = 0 } }
     end
     if global.players[player.name].health == nil then
-        global.players[player.name].health = {count = 0, level = 1, temp_data = {}}
+        global.players[player.name].health = { count = 0, level = 1, temp_data = {} }
     end
     ReApplyBonus(player)
 end
@@ -113,9 +113,10 @@ end
 
 local function OnInit(e)
     global.queue = global.queue or {}
+    global.tracking = global.tracking or {}
     global.cache = global.cache or {}
     global.players = global.players or {}
-    global.print_colour = {r = 255, g = 255, b = 0}
+    global.print_colour = { r = 255, g = 255, b = 0 }
 
     for i, _ in pairs(game.players) do
         Gui.CreateTopGui(game.players[i])
@@ -164,11 +165,11 @@ local function OnConfigurationChanged(e)
         -- Migration to add health
         for _, player in pairs(game.players) do
             if global.players and global.players[player.name] and global.players[player.name].health == nil then
-                global.players[player.name].health = {count = 0, level = 1, temp_data = {}}
+                global.players[player.name].health = { count = 0, level = 1, temp_data = {} }
             end
         end
 
-        global.print_colour = {r = 255, g = 255, b = 0}
+        global.print_colour = { r = 255, g = 255, b = 0 }
     end
 end
 
@@ -214,7 +215,7 @@ end
 local function OnPlayerMinedEntity(e)
     local player = game.get_player(e.player_index)
 
-    if player.controller_type == defines.controllers.character then
+    if player and player.controller_type == defines.controllers.character then
         if global.players[player.name] == nil or global.players[player.name].mining == nil then
             FixPlayerRecord(player)
         end
@@ -230,6 +231,13 @@ local function OnPlayerMinedEntity(e)
         local playerMining = global.players[player.name].mining
         playerMining.count = playerMining.count + (points / (player.character_mining_speed_modifier + 1))
 
+        local p_name = player.name
+        local i_name = "[img=item." .. e.entity.name .. "]"
+        global.tracking.mining = global.tracking.mining or {}
+        global.tracking.mining[p_name] = global.tracking.mining[player.name] or {}
+        global.tracking.mining[p_name][i_name] = global.tracking.mining[p_name][i_name] or 0
+        global.tracking.mining[p_name][i_name] = global.tracking.mining[p_name][i_name] + 1
+
         local current_level = math.floor(CurrentLevel(playerMining.count))
 
         if current_level ~= playerMining.level then
@@ -242,7 +250,7 @@ end
 
 local function OnPlayerCraftedItem(e)
     local player = game.get_player(e.player_index)
-    if player.controller_type == defines.controllers.character then
+    if player and player.controller_type == defines.controllers.character then
         if global.players[player.name] == nil or global.players[player.name].crafting == nil then
             FixPlayerRecord(player)
         end
@@ -258,6 +266,13 @@ local function OnPlayerCraftedItem(e)
         local playerCrafting = global.players[player.name].crafting
         playerCrafting.count = playerCrafting.count + (points / (player.character_crafting_speed_modifier + 1))
 
+        local p_name = player.name
+        local i_name = "[img=recipe." .. e.recipe.name .. "]"
+        global.tracking.crafting = global.tracking.crafting or {}
+        global.tracking.crafting[p_name] = global.tracking.crafting[player.name] or {}
+        global.tracking.crafting[p_name][i_name] = global.tracking.crafting[p_name][i_name] or 0
+        global.tracking.crafting[p_name][i_name] = global.tracking.crafting[p_name][i_name] + 1
+
         local current_level = math.floor(CurrentLevel(playerCrafting.count))
 
         if current_level ~= playerCrafting.level then
@@ -269,7 +284,7 @@ local function OnPlayerCraftedItem(e)
 end
 
 local function TrackDistanceTravelledByPlayer(player)
-    if player.controller_type == defines.controllers.character then
+    if player and player.controller_type == defines.controllers.character then
         if player.walking_state.walking and player.character.name == "character" then
             if global.players[player.name] == nil or global.players[player.name].running == nil then
                 FixPlayerRecord(player)
@@ -354,7 +369,7 @@ end
 local function OnPlayerRespawned(e)
     local player = game.get_player(e.player_index)
     FixPlayerRecord(player)
-    if player.gui.left["DoingThingsByHandMain"] then
+    if player and player.gui.left["DoingThingsByHandMain"] then
         player.gui.left["DoingThingsByHandMain"].destroy()
         Gui.CreateMainGui(player)
     end
@@ -426,7 +441,8 @@ local function on_character_swapped_event(data)
         end
     end
 end
-remote.add_interface("DoingThingsByHand", {on_character_swapped = on_character_swapped_event})
+
+remote.add_interface("DoingThingsByHand", { on_character_swapped = on_character_swapped_event })
 
 script.on_init(OnInit)
 script.on_load(OnLoad)

@@ -1,11 +1,11 @@
 {
     "name": "DoingThingsByHand",
-    "version": "1.2.2",
+    "version": "2.0.1",
     "title": "Doing Things By Hand",
     "author": "billbo99",
     "contact": "",
     "homepage": "https://mods.factorio.com/mod/DoingThingsByHand",
-    "factorio_version": "1.1",
+    "factorio_version": "2.0",
     "dependencies": [
         "base",
         "?space-exploration-postprocess",

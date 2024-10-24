@@ -12,15 +12,15 @@ local function CurrentLevel(param)
 end
 
 local function calc_tooltip(player, category)
-    if player and global.tracking[category] and global.tracking[category][player.name] then
+    if player and storage.tracking[category] and storage.tracking[category][player.name] then
         local text = ""
-        local records = Utils.sortedKeys(global.tracking[category][player.name])
+        local records = Utils.sortedKeys(storage.tracking[category][player.name])
         local top_items = { table.unpack(records, 1, 20) }
         for _, item in pairs(top_items) do
             if text == "" then
-                text = item .. "\t" .. global.tracking[category][player.name][item]
+                text = item .. "\t" .. storage.tracking[category][player.name][item]
             else
-                text = text .. "\n" .. item .. "\t" .. global.tracking[category][player.name][item]
+                text = text .. "\n" .. item .. "\t" .. storage.tracking[category][player.name][item]
             end
         end
         return text
@@ -46,12 +46,12 @@ function Gui.CreateTopGui(player)
     local button = button_flow.DoingThingsByHandMainButton
     if not button then
         button =
-        button_flow.add {
-            type = "sprite-button",
-            name = "DoingThingsByHandMainButton",
-            sprite = "DoingThingsByHand",
-            style = mod_gui.button_style
-        }
+            button_flow.add {
+                type = "sprite-button",
+                name = "DoingThingsByHandMainButton",
+                sprite = "DoingThingsByHand",
+                style = mod_gui.button_style
+            }
     end
     return button
 end
@@ -61,16 +61,16 @@ function Gui.CreateMainGui(player)
         player.gui.left["DoingThingsByHandMain"].destroy()
     end
 
-    if global.players and Utils.TableSize(global.players) > 0 then
+    if storage.players and Utils.TableSize(storage.players) > 0 then
         local DoingThingsByHandMain = player.gui.left.add({ type = "frame", name = "DoingThingsByHandMain", direction = "vertical" })
         DoingThingsByHandMain.style.minimal_height = 10
         DoingThingsByHandMain.style.minimal_width = 10
 
-        DoingThingsByHandMain.add({ type = "label", caption = "Doing Things by Hand", style = "heading_1_label" })
+        DoingThingsByHandMain.add({ type = "label", caption = "Doing Things by Hand", style = "frame_title" })
 
         local headers = { "crafting", "mining", "running", "health" }
         local column_count = (#headers * 2) + 1
-        local f = DoingThingsByHandMain.add({ type = "table", style = "mod_info_table", column_count = column_count })
+        local f = DoingThingsByHandMain.add({ type = "table", style = "bordered_table", column_count = column_count })
 
         f.add({ type = "label", caption = "Player", style = "bold_label" })
         for _, header in pairs(headers) do
@@ -83,12 +83,12 @@ function Gui.CreateMainGui(player)
         end
 
         local score = {}
-        for player_name, _ in pairs(global.players) do
+        for player_name, _ in pairs(storage.players) do
             if not score[player_name] then
                 score[player_name] = 0
             end
             for _, header in pairs(headers) do
-                score[player_name] = score[player_name] + CurrentLevel(global.players[player_name][header].count)
+                score[player_name] = score[player_name] + CurrentLevel(storage.players[player_name][header].count)
             end
         end
 
@@ -101,7 +101,7 @@ function Gui.CreateMainGui(player)
 
                 for _, header in pairs(headers) do
                     local tooltip = ""
-                    local caption = string.format("Lv %2.2f", CurrentLevel(global.players[player_name][header].count))
+                    local caption = string.format("Lv %2.2f", CurrentLevel(storage.players[player_name][header].count))
                     f.add({ type = "label", caption = caption })
                     if _player.controller_type == defines.controllers.character then
                         if header == "crafting" then

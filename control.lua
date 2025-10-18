@@ -212,6 +212,52 @@ local function OnScriptTriggerEffect(e)
     end
 end
 
+local function _MinedTile(tile, player)
+    local points = 1
+    if storage.cache[tile.name] then
+        points = storage.cache[tile.name]
+    elseif tile and tile.mineable_properties and tile.mineable_properties.mining_time then
+        points = tile.mineable_properties.mining_time / settings.global["DoingThingsByHand-mining"].value
+        storage.cache[tile.name] = points
+    end
+
+    local playerMining = storage.players[player.name].mining
+    playerMining.count = playerMining.count + (points / (player.character_mining_speed_modifier + 1))
+
+    local p_name = player.name
+    local i_name = "[img=item." .. tile.name .. "]"
+    if not (helpers.is_valid_sprite_path("item." .. tile.name)) and helpers.is_valid_sprite_path("entity." .. tile.name) then
+        i_name = "[img=entity." .. tile.name .. "]"
+    end
+
+    storage.tracking.mining = storage.tracking.mining or {}
+    storage.tracking.mining[p_name] = storage.tracking.mining[player.name] or {}
+    storage.tracking.mining[p_name][i_name] = storage.tracking.mining[p_name][i_name] or 0
+    storage.tracking.mining[p_name][i_name] = storage.tracking.mining[p_name][i_name] + 1
+
+    local current_level = math.floor(CurrentLevel(playerMining.count))
+
+    if current_level ~= playerMining.level then
+        playerMining.level = current_level
+        ReApplyBonus(player)
+        player.print("Mining speed bonus has now been increased to .. " .. tostring(player.character_mining_speed_modifier * 100) .. "%", storage.print_colour)
+    end
+end
+
+local function OnPlayerMinedTile(e)
+    local player = game.get_player(e.player_index)
+
+    if player and player.controller_type == defines.controllers.character then
+        if storage.players[player.name] == nil or storage.players[player.name].mining == nil then
+            FixPlayerRecord(player)
+        end
+        for _, tile in pairs(e.tiles) do
+            _MinedTile(tile.old_tile, player)
+        end
+    end
+end
+
+
 local function OnPlayerMinedEntity(e)
     local player = game.get_player(e.player_index)
 
@@ -456,6 +502,7 @@ script.on_nth_tick(61, TrackDistanceTravelled)
 script.on_event(defines.events.on_runtime_mod_setting_changed, OnRuntimeModSettingChanged)
 script.on_event(defines.events.on_player_crafted_item, OnPlayerCraftedItem)
 script.on_event(defines.events.on_player_mined_entity, OnPlayerMinedEntity)
+script.on_event(defines.events.on_player_mined_tile, OnPlayerMinedTile)
 script.on_event(defines.events.on_player_joined_game, OnPlayerJoinedGame)
 script.on_event(defines.events.on_player_respawned, OnPlayerRespawned)
 script.on_event(defines.events.on_player_created, OnPlayerCreated)

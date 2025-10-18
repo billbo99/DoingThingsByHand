@@ -10,9 +10,6 @@
             "name": "Factorio Mod Debug (Settings & Data)",
             "hookSettings": false,
             "hookControl": true,
-            // "hookControl": [
-            //     "DoingThingsByHand"
-            // ],
             "modsPath": "D:\\dev\\mods_Death_Counter",
             "hookData": false
         },
